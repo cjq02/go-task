@@ -6,9 +6,9 @@ import (
 
 type User struct {
 	ID        uint      `json:"id" gorm:"primaryKey"`
-	Username  string    `json:"username" gorm:"uniqueIndex;not null"`
-	Password  string    `json:"-" gorm:"not null"`
-	Email     string    `json:"email" gorm:"uniqueIndex;not null"`
+	Username  string    `json:"username" gorm:"size:100;uniqueIndex;not null"`
+	Password  string    `json:"-" gorm:"size:255;not null"`
+	Email     string    `json:"email" gorm:"size:100;uniqueIndex;not null"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 	Posts     []Post    `json:"-" gorm:"foreignKey:UserID"`

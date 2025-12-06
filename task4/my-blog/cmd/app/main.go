@@ -103,4 +103,3 @@ func autoMigrate(db *gorm.DB) error {
 	log.Println("Running auto-migration...")
 	return db.AutoMigrate(&model.User{}, &model.Post{}, &model.Comment{})
 }
-

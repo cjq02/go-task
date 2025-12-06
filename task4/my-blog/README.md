@@ -21,7 +21,7 @@
 ## 项目结构
 
 ```
-backend/
+my-blog/
 ├── cmd/
 │   └── app/
 │       └── main.go          # 应用入口
@@ -81,21 +81,21 @@ LOG_LEVEL=info
 ## 安装依赖
 
 ```bash
-cd backend
+cd my-blog
 go mod download
 ```
 
 ## 运行项目
 
 ```bash
-cd backend/cmd/app
+cd my-blog/cmd/app
 go run main.go
 ```
 
-或者从 backend 目录运行：
+或者从项目根目录运行：
 
 ```bash
-cd backend
+cd my-blog
 go run cmd/app/main.go
 ```
 
