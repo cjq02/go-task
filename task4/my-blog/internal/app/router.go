@@ -33,9 +33,9 @@ func SetupRouter(
 	jwtService := service.NewJWTService(secretKey)
 	authMiddleware := middleware.NewAuthMiddleware(secretKey)
 
-	userHandler := handler.NewUserHandler(userService, jwtService)
-	postHandler := handler.NewPostHandler(postService)
-	commentHandler := handler.NewCommentHandler(commentService)
+	userHandler := handler.NewUserHandler(userService, jwtService, appLogger)
+	postHandler := handler.NewPostHandler(postService, appLogger)
+	commentHandler := handler.NewCommentHandler(commentService, appLogger)
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
@@ -81,4 +81,3 @@ func SetupRouter(
 
 	return r
 }
-

@@ -1,20 +1,27 @@
 package handler
 
 import (
+	"blog-backend/internal/errors"
+	"blog-backend/internal/logger"
 	"blog-backend/internal/model"
 	"blog-backend/internal/response"
 	"blog-backend/internal/service"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type PostHandler struct {
 	postService *service.PostService
+	logger      *logger.Logger
 }
 
-func NewPostHandler(postService *service.PostService) *PostHandler {
-	return &PostHandler{postService: postService}
+func NewPostHandler(postService *service.PostService, appLogger *logger.Logger) *PostHandler {
+	return &PostHandler{
+		postService: postService,
+		logger:      appLogger,
+	}
 }
 
 func (h *PostHandler) Create(c *gin.Context) {
@@ -23,29 +30,32 @@ func (h *PostHandler) Create(c *gin.Context) {
 
 	var req model.CreatePostRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Error(c, response.ErrCodeValidationFailed, err.Error())
+		appErr := errors.NewValidationError("请求参数无效: " + err.Error())
+		response.HandleError(c, h.logger, appErr)
 		return
 	}
 
 	post, err := h.postService.Create(userID, &req)
 	if err != nil {
-		response.Error(c, response.ErrCodeDatabaseError, err.Error())
+		response.HandleError(c, h.logger, err)
 		return
 	}
 
+	h.logger.Info("用户 %d 创建了文章，ID: %d", userID, post.ID)
 	response.Success(c, post.ToResponse())
 }
 
 func (h *PostHandler) GetByID(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		response.Error(c, response.ErrCodeValidationFailed, "无效的文章ID")
+		appErr := errors.NewValidationError("无效的文章ID")
+		response.HandleError(c, h.logger, appErr)
 		return
 	}
 
 	post, err := h.postService.GetByID(uint(id))
 	if err != nil {
-		response.Error(c, response.ErrCodeDatabaseError, "文章不存在")
+		response.HandleGormError(c, h.logger, err, "文章")
 		return
 	}
 
@@ -58,7 +68,7 @@ func (h *PostHandler) List(c *gin.Context) {
 
 	posts, total, err := h.postService.List(limit, offset)
 	if err != nil {
-		response.Error(c, response.ErrCodeDatabaseError, err.Error())
+		response.HandleError(c, h.logger, err)
 		return
 	}
 
@@ -78,22 +88,30 @@ func (h *PostHandler) Update(c *gin.Context) {
 	userID := userIDInterface.(uint)
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		response.Error(c, response.ErrCodeValidationFailed, "无效的文章ID")
+		appErr := errors.NewValidationError("无效的文章ID")
+		response.HandleError(c, h.logger, appErr)
 		return
 	}
 
 	var req model.UpdatePostRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Error(c, response.ErrCodeValidationFailed, err.Error())
+		appErr := errors.NewValidationError("请求参数无效: " + err.Error())
+		response.HandleError(c, h.logger, appErr)
 		return
 	}
 
 	post, err := h.postService.Update(userID, uint(id), &req)
 	if err != nil {
-		response.Error(c, response.ErrCodeDatabaseError, err.Error())
+		if err == gorm.ErrRecordNotFound {
+			appErr := errors.NewForbiddenError("无权限修改该文章或文章不存在")
+			response.HandleError(c, h.logger, appErr)
+			return
+		}
+		response.HandleError(c, h.logger, err)
 		return
 	}
 
+	h.logger.Info("用户 %d 更新了文章，ID: %d", userID, post.ID)
 	response.Success(c, post.ToResponse())
 }
 
@@ -102,15 +120,17 @@ func (h *PostHandler) Delete(c *gin.Context) {
 	userID := userIDInterface.(uint)
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		response.Error(c, response.ErrCodeValidationFailed, "无效的文章ID")
+		appErr := errors.NewValidationError("无效的文章ID")
+		response.HandleError(c, h.logger, appErr)
 		return
 	}
 
 	if err := h.postService.Delete(userID, uint(id)); err != nil {
-		response.Error(c, response.ErrCodeDatabaseError, err.Error())
+		response.HandleError(c, h.logger, err)
 		return
 	}
 
+	h.logger.Info("用户 %d 删除了文章，ID: %d", userID, id)
 	response.Success(c, gin.H{"message": "删除成功"})
 }
 

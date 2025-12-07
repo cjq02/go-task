@@ -1,8 +1,8 @@
 package service
 
 import (
+	"blog-backend/internal/errors"
 	"blog-backend/internal/model"
-	"errors"
 
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -19,20 +19,20 @@ func NewUserService(db *gorm.DB) *UserService {
 func (s *UserService) Register(req *model.RegisterRequest) (*model.User, error) {
 	var existingUser model.User
 	if err := s.db.Where("username = ?", req.Username).First(&existingUser).Error; err == nil {
-		return nil, errors.New("用户名已存在")
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, err
+		return nil, errors.NewValidationError("用户名已存在")
+	} else if err != gorm.ErrRecordNotFound {
+		return nil, errors.NewDatabaseError(err)
 	}
 
 	if err := s.db.Where("email = ?", req.Email).First(&existingUser).Error; err == nil {
-		return nil, errors.New("邮箱已存在")
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, err
+		return nil, errors.NewValidationError("邮箱已存在")
+	} else if err != gorm.ErrRecordNotFound {
+		return nil, errors.NewDatabaseError(err)
 	}
 
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return nil, err
+		return nil, errors.NewInternalError("密码加密失败", err)
 	}
 
 	user := &model.User{
@@ -42,7 +42,7 @@ func (s *UserService) Register(req *model.RegisterRequest) (*model.User, error) 
 	}
 
 	if err := s.db.Create(user).Error; err != nil {
-		return nil, err
+		return nil, errors.NewDatabaseError(err)
 	}
 
 	return user, nil
@@ -51,11 +51,14 @@ func (s *UserService) Register(req *model.RegisterRequest) (*model.User, error) 
 func (s *UserService) Login(req *model.LoginRequest) (*model.User, error) {
 	var user model.User
 	if err := s.db.Where("username = ?", req.Username).First(&user).Error; err != nil {
-		return nil, errors.New("用户名或密码错误")
+		if err == gorm.ErrRecordNotFound {
+			return nil, errors.NewAuthError("用户名或密码错误")
+		}
+		return nil, errors.NewDatabaseError(err)
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
-		return nil, errors.New("用户名或密码错误")
+		return nil, errors.NewAuthError("用户名或密码错误")
 	}
 
 	return &user, nil
