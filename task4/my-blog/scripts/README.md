@@ -32,6 +32,18 @@ scripts/
 
 ### 1. 赋予执行权限
 
+**方式一：使用自动设置脚本（推荐）**
+
+```bash
+# 先给 setup.sh 添加执行权限
+chmod +x scripts/api/setup.sh
+
+# 运行脚本，自动给所有 API 脚本添加执行权限
+./scripts/api/setup.sh
+```
+
+**方式二：手动设置**
+
 ```bash
 chmod +x scripts/api/**/*.sh
 ```
