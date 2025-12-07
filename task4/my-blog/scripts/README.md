@@ -59,6 +59,9 @@ export BASE_URL=http://localhost:9080/api
 
 # 登录（会自动保存 token）
 ./scripts/api/auth/login.sh testuser 123456
+
+# 退出登录（需要先登录，会自动清除 token）
+./scripts/api/auth/logout.sh
 ```
 
 #### 用户相关

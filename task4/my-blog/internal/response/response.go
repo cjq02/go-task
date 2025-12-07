@@ -20,7 +20,10 @@ func Success(c *gin.Context, data interface{}) {
 	c.JSON(200, Response{Code: 0, Data: data})
 }
 
+func SuccessWithMessage(c *gin.Context, data interface{}, message string) {
+	c.JSON(200, Response{Code: 0, Data: data, Message: message})
+}
+
 func Error(c *gin.Context, code int, msg string) {
 	c.JSON(200, Response{Code: code, Message: msg})
 }
-

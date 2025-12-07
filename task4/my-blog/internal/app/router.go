@@ -51,6 +51,7 @@ func SetupRouter(
 		{
 			auth.POST("/register", userHandler.Register)
 			auth.POST("/login", userHandler.Login)
+			auth.POST("/logout", authMiddleware.JWTAuth(), userHandler.Logout)
 		}
 
 		users := api.Group("/users")

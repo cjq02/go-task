@@ -105,6 +105,7 @@ go run cmd/app/main.go
 
 - `POST /api/auth/register` - 用户注册
 - `POST /api/auth/login` - 用户登录
+- `POST /api/auth/logout` - 退出登录（需要认证）
 
 ### 用户相关（需要认证）
 

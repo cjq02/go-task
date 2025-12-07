@@ -33,7 +33,7 @@ func (h *UserHandler) Register(c *gin.Context) {
 		return
 	}
 
-	response.Success(c, user.ToResponse())
+	response.SuccessWithMessage(c, user.ToResponse(), "注册成功")
 }
 
 func (h *UserHandler) Login(c *gin.Context) {
@@ -55,10 +55,14 @@ func (h *UserHandler) Login(c *gin.Context) {
 		return
 	}
 
-	response.Success(c, gin.H{
+	response.SuccessWithMessage(c, gin.H{
 		"user":  user.ToResponse(),
 		"token": token,
-	})
+	}, "登录成功")
+}
+
+func (h *UserHandler) Logout(c *gin.Context) {
+	response.SuccessWithMessage(c, gin.H{}, "退出登录成功")
 }
 
 func (h *UserHandler) GetProfile(c *gin.Context) {
@@ -76,4 +80,3 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
 
 	response.Success(c, user.ToResponse())
 }
-
