@@ -126,6 +126,11 @@ func (h *PostHandler) Delete(c *gin.Context) {
 	}
 
 	if err := h.postService.Delete(userID, uint(id)); err != nil {
+		if err == gorm.ErrRecordNotFound {
+			appErr := errors.NewForbiddenError("无权限删除该文章或文章不存在")
+			response.HandleError(c, h.logger, appErr)
+			return
+		}
 		response.HandleError(c, h.logger, err)
 		return
 	}
@@ -133,4 +138,3 @@ func (h *PostHandler) Delete(c *gin.Context) {
 	h.logger.Info("用户 %d 删除了文章，ID: %d", userID, id)
 	response.Success(c, gin.H{"message": "删除成功"})
 }
-

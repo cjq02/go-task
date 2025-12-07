@@ -2,6 +2,7 @@ package service
 
 import (
 	"blog-backend/internal/model"
+
 	"gorm.io/gorm"
 )
 
@@ -71,6 +72,14 @@ func (s *PostService) Update(userID, postID uint, req *model.UpdatePostRequest) 
 }
 
 func (s *PostService) Delete(userID, postID uint) error {
-	return s.db.Where("id = ? AND user_id = ?", postID, userID).Delete(&model.Post{}).Error
-}
+	result := s.db.Where("id = ? AND user_id = ?", postID, userID).Delete(&model.Post{})
+	if result.Error != nil {
+		return result.Error
+	}
 
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+
+	return nil
+}

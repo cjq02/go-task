@@ -133,6 +133,11 @@ func (h *CommentHandler) Delete(c *gin.Context) {
 	}
 
 	if err := h.commentService.Delete(userID, uint(id)); err != nil {
+		if err == gorm.ErrRecordNotFound {
+			appErr := errors.NewForbiddenError("无权限删除该评论或评论不存在")
+			response.HandleError(c, h.logger, appErr)
+			return
+		}
 		response.HandleError(c, h.logger, err)
 		return
 	}

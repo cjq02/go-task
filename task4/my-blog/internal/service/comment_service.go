@@ -72,6 +72,15 @@ func (s *CommentService) Update(userID, commentID uint, req *model.UpdateComment
 }
 
 func (s *CommentService) Delete(userID, commentID uint) error {
-	return s.db.Where("id = ? AND user_id = ?", commentID, userID).Delete(&model.Comment{}).Error
+	result := s.db.Where("id = ? AND user_id = ?", commentID, userID).Delete(&model.Comment{})
+	if result.Error != nil {
+		return result.Error
+	}
+	
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	
+	return nil
 }
 
