@@ -5,10 +5,12 @@
 ## 功能特性
 
 - 用户注册和登录（JWT 认证）
-- 文章的 CRUD 操作
-- 评论的 CRUD 操作
+- 退出登录功能
+- 文章的 CRUD 操作（权限控制：只能修改/删除自己的文章）
+- 评论的 CRUD 操作（权限控制：只能修改/删除自己的评论）
 - 数据库自动迁移
-- 日志记录
+- 统一的错误处理和日志记录
+- 完善的权限验证机制
 
 ## 技术栈
 
@@ -31,6 +33,8 @@ my-blog/
 │   ├── config/
 │   │   ├── app.go           # 应用配置
 │   │   └── database.go      # 数据库配置
+│   ├── errors/
+│   │   └── app_error.go     # 错误处理定义
 │   ├── handler/
 │   │   ├── user_handler.go  # 用户处理器
 │   │   ├── post_handler.go  # 文章处理器
@@ -48,9 +52,18 @@ my-blog/
 │   │   ├── auth.go          # 认证中间件
 │   │   └── cors.go          # CORS 中间件
 │   ├── response/
-│   │   └── response.go      # 响应格式
+│   │   └── response.go      # 响应格式和错误处理
 │   └── logger/
 │       └── logger.go        # 日志工具
+├── scripts/
+│   └── api/                 # API 测试脚本
+│       ├── setup.sh         # 批量设置脚本执行权限
+│       ├── config.sh        # 脚本配置文件
+│       ├── auth/            # 认证相关脚本
+│       ├── users/           # 用户相关脚本
+│       ├── posts/           # 文章相关脚本
+│       └── comments/        # 评论相关脚本
+├── docs/                    # 文档目录
 ├── logs/                    # 日志目录
 ├── go.mod
 └── README.md
@@ -135,6 +148,65 @@ go run cmd/app/main.go
 - `posts` - 文章表
 - `comments` - 评论表
 
+## 错误处理
+
+项目实现了统一的错误处理机制：
+
+- **错误类型分类**：参数验证失败（400）、认证失败（401）、无权限（403）、资源不存在（404）、服务器错误（500）
+- **统一的错误响应格式**：所有错误返回统一的 JSON 格式，包含错误码和错误消息
+- **自动日志记录**：所有错误自动记录到日志文件，方便调试和维护
+
+### HTTP 状态码映射
+
+| 错误类型 | HTTP 状态码 | 业务错误码 |
+|---------|------------|-----------|
+| 参数验证失败 | 400 | 1001 |
+| 认证失败 | 401 | 1002 |
+| 无权限 | 403 | 1003 |
+| 资源不存在 | 404 | 1004 |
+| 数据库错误 | 500 | 2001 |
+| 内部服务器错误 | 500 | 2002 |
+
+### 错误响应示例
+
+```json
+{
+  "code": 1003,
+  "message": "无权限删除该文章或文章不存在"
+}
+```
+
+## 权限控制
+
+- **文章权限**：只有文章的作者才能更新或删除自己的文章
+- **评论权限**：只有评论的作者才能更新或删除自己的评论
+- **自动验证**：所有需要权限的操作都会自动验证用户身份
+
+## 日志记录
+
+- **日志级别**：INFO（正常操作）、WARN（客户端错误）、ERROR（服务器错误）
+- **日志位置**：`logs/YYYY/MM/DD.log`，按日期自动分割
+- **记录内容**：操作类型、用户ID、错误信息、请求路径等
+
+## API 测试脚本
+
+项目提供了完整的 API 测试脚本，位于 `scripts/api/` 目录：
+
+### 快速开始
+
+```bash
+# 1. 设置脚本执行权限
+chmod +x scripts/api/setup.sh
+./scripts/api/setup.sh
+
+# 2. 使用脚本测试 API
+./scripts/api/auth/register.sh testuser 123456 test@example.com
+./scripts/api/auth/login.sh testuser 123456
+./scripts/api/posts/create.sh "文章标题" "文章内容"
+```
+
+详细使用方法请参考 [scripts/README.md](scripts/README.md)
+
 ## 测试
 
 使用 curl 或其他 HTTP 客户端测试 API：
@@ -149,5 +221,12 @@ curl -X POST http://localhost:9080/api/auth/register \
 curl -X POST http://localhost:9080/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username":"test","password":"123456"}'
+```
+
+或使用项目提供的测试脚本（推荐）：
+
+```bash
+./scripts/api/auth/register.sh testuser 123456 test@example.com
+./scripts/api/auth/login.sh testuser 123456
 ```
 
